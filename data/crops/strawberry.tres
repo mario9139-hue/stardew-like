@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="CropData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/crop_data.gd" id="1_crop"]
+[ext_resource type="Resource" path="res://data/items/strawberry.tres" id="3_harvest"]
+
+[resource]
+script = ExtResource("1_crop")
+id = &"strawberry"
+display_name = "イチゴ"
+seed_price = 100
+growth_days = 6
+regrow_days = 2
+sell_price = 50
+stage_colors = PackedColorArray(0.25, 0.5, 0.2, 1, 0.35, 0.7, 0.25, 1, 0.75, 0.25, 0.35, 1, 0.95, 0.3, 0.4, 1)
+harvest_item = ExtResource("3_harvest")

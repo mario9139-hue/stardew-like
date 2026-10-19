@@ -1,0 +1,234 @@
+[gd_scene load_steps=38 format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/player.tscn" id="1_player"]
+[ext_resource type="Texture2D" path="res://assets/tiles_placeholder.png" id="2_tiles"]
+[ext_resource type="Script" path="res://scripts/farm_map.gd" id="3_farmmap"]
+[ext_resource type="Script" path="res://scripts/cell_highlight.gd" id="4_highlight"]
+[ext_resource type="Script" path="res://scripts/tool_controller.gd" id="5_toolctrl"]
+[ext_resource type="Script" path="res://scripts/crop_renderer.gd" id="6_croprenderer"]
+[ext_resource type="Script" path="res://scripts/day_manager.gd" id="7_daymanager"]
+[ext_resource type="Script" path="res://scripts/hud.gd" id="8_hud"]
+[ext_resource type="Script" path="res://scripts/inventory.gd" id="10_inventory"]
+[ext_resource type="Script" path="res://scripts/hotbar.gd" id="11_hotbar"]
+[ext_resource type="Resource" path="res://data/items/hoe.tres" id="12_hoe"]
+[ext_resource type="Resource" path="res://data/items/watering_can.tres" id="13_can"]
+[ext_resource type="Resource" path="res://data/items/turnip_seed.tres" id="14_seed"]
+[ext_resource type="Resource" path="res://data/items/turnip.tres" id="15_turnipitem"]
+[ext_resource type="PackedScene" path="res://scenes/house.tscn" id="16_house"]
+[ext_resource type="PackedScene" path="res://scenes/sales_box.tscn" id="17_salesbox"]
+[ext_resource type="Script" path="res://scripts/screen_fader.gd" id="18_fader"]
+[ext_resource type="Script" path="res://scripts/season_end_overlay.gd" id="19_seasonend"]
+[ext_resource type="Script" path="res://scripts/interaction_controller.gd" id="20_interaction"]
+[ext_resource type="Script" path="res://scripts/money_display.gd" id="21_money"]
+[ext_resource type="Script" path="res://scripts/settlement_display.gd" id="22_settlement"]
+[ext_resource type="PackedScene" path="res://scenes/well.tscn" id="23_well"]
+[ext_resource type="Script" path="res://scripts/message_display.gd" id="24_message"]
+[ext_resource type="Script" path="res://scripts/touch_controls.gd" id="25_touch"]
+[ext_resource type="PackedScene" path="res://scenes/shop.tscn" id="26_shop"]
+[ext_resource type="Script" path="res://scripts/shop_screen.gd" id="27_shopscreen"]
+[ext_resource type="Resource" path="res://data/shop/turnip_seed_entry.tres" id="28_entry"]
+[ext_resource type="Resource" path="res://data/items/potato_seed.tres" id="29_potato_seed"]
+[ext_resource type="Resource" path="res://data/items/strawberry_seed.tres" id="30_strawberry_seed"]
+[ext_resource type="Resource" path="res://data/items/potato.tres" id="31_potato"]
+[ext_resource type="Resource" path="res://data/items/strawberry.tres" id="32_strawberry"]
+[ext_resource type="Resource" path="res://data/shop/potato_seed_entry.tres" id="33_potato_entry"]
+[ext_resource type="Resource" path="res://data/shop/strawberry_seed_entry.tres" id="34_strawberry_entry"]
+[ext_resource type="Resource" path="res://data/items/growth_powder.tres" id="35_growth_powder"]
+[ext_resource type="Resource" path="res://data/items/quality_shard.tres" id="36_quality_shard"]
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_farm"]
+texture = ExtResource("2_tiles")
+texture_region_size = Vector2i(16, 16)
+0:0/0 = 0
+1:0/0 = 0
+2:0/0 = 0
+3:0/0 = 0
+
+[sub_resource type="TileSet" id="TileSet_farm"]
+tile_size = Vector2i(16, 16)
+sources/0 = SubResource("TileSetAtlasSource_farm")
+
+[node name="Main" type="Node2D"]
+
+[node name="FarmMap" type="TileMapLayer" parent="."]
+tile_set = SubResource("TileSet_farm")
+script = ExtResource("3_farmmap")
+
+[node name="CropRenderer" type="Node2D" parent="."]
+script = ExtResource("6_croprenderer")
+
+[node name="CellHighlight" type="Node2D" parent="."]
+script = ExtResource("4_highlight")
+player = NodePath("../Player")
+
+[node name="House" parent="." instance=ExtResource("16_house")]
+position = Vector2(56, 64)
+
+[node name="SalesBox" parent="." instance=ExtResource("17_salesbox")]
+position = Vector2(104, 72)
+
+[node name="Well" parent="." instance=ExtResource("23_well")]
+position = Vector2(136, 104)
+
+[node name="Shop" parent="." instance=ExtResource("26_shop")]
+position = Vector2(36, 156)
+entries = [ExtResource("28_entry"), ExtResource("33_potato_entry"), ExtResource("34_strawberry_entry")]
+
+[node name="Player" parent="." instance=ExtResource("1_player")]
+position = Vector2(168, 88)
+
+[node name="Inventory" type="Node" parent="."]
+script = ExtResource("10_inventory")
+starting_items = {
+"turnip_seed": 10
+}
+
+[node name="ToolController" type="Node" parent="."]
+script = ExtResource("5_toolctrl")
+
+[node name="InteractionController" type="Node" parent="."]
+script = ExtResource("20_interaction")
+
+[node name="DayManager" type="Node" parent="."]
+script = ExtResource("7_daymanager")
+
+[node name="Hotbar" type="CanvasLayer" parent="."]
+script = ExtResource("11_hotbar")
+slot_items = [ExtResource("12_hoe"), ExtResource("13_can"), ExtResource("14_seed"), ExtResource("29_potato_seed"), ExtResource("30_strawberry_seed"), ExtResource("15_turnipitem"), ExtResource("31_potato"), ExtResource("32_strawberry"), ExtResource("35_growth_powder"), ExtResource("36_quality_shard")]
+
+[node name="Hud" type="CanvasLayer" parent="."]
+script = ExtResource("8_hud")
+
+[node name="Label" type="Label" parent="Hud"]
+offset_left = 4.0
+offset_top = 2.0
+offset_right = 124.0
+offset_bottom = 34.0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 10
+text = "選択: クワ
+Day 1"
+
+[node name="StaminaBack" type="ColorRect" parent="Hud"]
+offset_left = 4.0
+offset_top = 35.0
+offset_right = 64.0
+offset_bottom = 41.0
+color = Color(0.1, 0.1, 0.1, 0.8)
+
+[node name="StaminaFill" type="ColorRect" parent="Hud"]
+offset_left = 4.0
+offset_top = 35.0
+offset_right = 64.0
+offset_bottom = 41.0
+color = Color(0.35, 0.8, 0.35, 1)
+
+[node name="StaminaLabel" type="Label" parent="Hud"]
+offset_left = 68.0
+offset_top = 31.0
+offset_right = 140.0
+offset_bottom = 43.0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 8
+text = "体力 100/100"
+
+[node name="MoneyDisplay" type="CanvasLayer" parent="."]
+script = ExtResource("21_money")
+
+[node name="Label" type="Label" parent="MoneyDisplay"]
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -80.0
+offset_top = 2.0
+offset_right = -4.0
+offset_bottom = 14.0
+grow_horizontal = 0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 10
+text = "0500G"
+horizontal_alignment = 2
+
+[node name="SettlementDisplay" type="CanvasLayer" parent="."]
+script = ExtResource("22_settlement")
+
+[node name="Label" type="Label" parent="SettlementDisplay"]
+visible = false
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -140.0
+offset_top = 16.0
+offset_right = -4.0
+offset_bottom = 60.0
+grow_horizontal = 0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 10
+horizontal_alignment = 2
+
+[node name="SeasonEndOverlay" type="CanvasLayer" parent="."]
+layer = 5
+script = ExtResource("19_seasonend")
+
+[node name="Dim" type="ColorRect" parent="SeasonEndOverlay"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 0.6)
+
+[node name="Label" type="Label" parent="SeasonEndOverlay"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 4
+theme_override_font_sizes/font_size = 20
+text = "シーズン終了"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="ScreenFader" type="CanvasLayer" parent="."]
+layer = 10
+script = ExtResource("18_fader")
+
+[node name="ColorRect" type="ColorRect" parent="ScreenFader"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 0)
+
+[node name="MessageDisplay" type="CanvasLayer" parent="."]
+script = ExtResource("24_message")
+
+[node name="Label" type="Label" parent="MessageDisplay"]
+visible = false
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -48.0
+offset_bottom = -34.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 10
+horizontal_alignment = 1
+
+[node name="TouchControls" type="CanvasLayer" parent="."]
+script = ExtResource("25_touch")
+
+[node name="ShopScreen" type="CanvasLayer" parent="."]
+script = ExtResource("27_shopscreen")

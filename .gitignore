@@ -1,0 +1,10 @@
+# Godot 4 のキャッシュ
+.godot/
+
+# エクスポート成果物
+build/
+exports/
+
+# OSの一時ファイル
+.DS_Store
+Thumbs.db
