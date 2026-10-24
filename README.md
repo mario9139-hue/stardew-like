@@ -22,3 +22,20 @@ Godot 4(GDScript)で作る、スタデューバレー風の2D農場ゲーム。
 - タイルサイズ: 16x16
 
 開発ルールとゲーム仕様は `CLAUDE.md` を参照。
+
+## Web 公開(GitHub Pages)
+`main` ブランチに push すると、GitHub Actions(`.github/workflows/deploy.yml`)が Web 版を書き出して GitHub Pages に公開する。
+
+- 使用イメージ: `barichello/godot-ci:4.3`(Godot 4.3 + 書き出しテンプレート入り)。`project.godot` の Godot 4.3 に合わせている。バージョンを上げるときは `deploy.yml` の `image` のタグを変える
+- 書き出し設定: `export_presets.cfg` の「Web」プリセット。**シングルスレッド出力**(`variant/thread_support=false`)。GitHub Pages ではレスポンスヘッダ(COOP/COEP)を制御できないため
+- レンダラー: Web は互換(`gl_compatibility`)で動く(`project.godot` の `rendering_method.web`)
+- 成果物は `build/web/`(`.gitignore` 済み)。手元で試すときは Godot で「プロジェクト → エクスポート → Web」
+- 初回だけ GitHub のリポジトリ設定で、Settings → Pages → Build and deployment → Source を **GitHub Actions** にする
+- 公開URL: `https://<ユーザー名>.github.io/<リポジトリ名>/`
+- ブラウザでセーブが動くかの確認手順: `docs/web_test.md`
+
+### Web 版の注意点
+- **初回の読み込みが重い**: Godot のエンジン(wasm)を読み込むため、初回はしばらく待つ。2回目以降はブラウザのキャッシュで速くなる
+- **音声はユーザー操作後に鳴る**: ブラウザの制限で、画面をクリック/タップするまで音は鳴らない(今は音声なし。追加したときに備えた注意)
+- セーブはブラウザ内(IndexedDB)に保存される。ブラウザのサイトデータを消すとセーブも消える。別のブラウザ・端末とは共有されない
+- タイトルの「終了」は、Web ではブラウザのタブを閉じる操作の代わりにはならない(何も起きない)

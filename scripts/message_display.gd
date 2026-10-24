@@ -8,6 +8,7 @@ var _show_id: int = 0
 
 
 func _ready() -> void:
+	add_to_group(&"message_display")
 	_label.visible = false
 
 

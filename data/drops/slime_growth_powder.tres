@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="DropEntry" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/drop_entry.gd" id="1_drop"]
+[ext_resource type="Resource" path="res://data/items/growth_powder.tres" id="2_item"]
+
+[resource]
+script = ExtResource("1_drop")
+item = ExtResource("2_item")
+chance = 0.5
+min_count = 1
+max_count = 1

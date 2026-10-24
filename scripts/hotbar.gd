@@ -7,8 +7,9 @@ extends CanvasLayer
 ## 選択中のアイテムが変わったときに発行される
 signal selection_changed(item: ItemData)
 
-const SLOT_SIZE: Vector2 = Vector2(30, 28)
+const BASE_SLOT_SIZE: Vector2 = Vector2(28, 26)
 const SLOT_GAP: float = 2.0
+const SIDE_MARGIN: float = 6.0
 const BOTTOM_MARGIN: float = 3.0
 const MAX_KEY_SLOTS: int = 9
 ## このアイテムは個数ではなく PlayerStats の残量(例: 12/20)を表示する
@@ -24,6 +25,7 @@ const COLOR_KEY: Color = Color(0.7, 0.7, 0.75, 1.0)
 @export var slot_items: Array = []
 
 var selected_index: int = 0
+var _slot_size: Vector2 = BASE_SLOT_SIZE
 
 var _inventory: Inventory
 ## スロットごとの表示部品: { "index", "item", "root", "border", "count_label" }
@@ -102,11 +104,15 @@ func _build_slots() -> void:
 	var count: int = slot_items.size()
 	if count == 0:
 		return
-	var total_width: float = count * SLOT_SIZE.x + (count - 1) * SLOT_GAP
 	var viewport_size: Vector2 = get_viewport().get_visible_rect().size
+	# スロット数に応じて幅を計算し、左右に最低 SIDE_MARGIN を確保する。
+	# 320px幅・10枠の場合は 28px × 10 + 2px × 9 = 298px で中央に収まる。
+	var available_slot_width: float = (viewport_size.x - SIDE_MARGIN * 2.0 - (count - 1) * SLOT_GAP) / count
+	_slot_size = Vector2(minf(BASE_SLOT_SIZE.x, available_slot_width), BASE_SLOT_SIZE.y)
+	var total_width: float = count * _slot_size.x + (count - 1) * SLOT_GAP
 	var start: Vector2 = Vector2(
 		(viewport_size.x - total_width) / 2.0,
-		viewport_size.y - SLOT_SIZE.y - BOTTOM_MARGIN
+		viewport_size.y - _slot_size.y - BOTTOM_MARGIN
 	)
 	for i: int in count:
 		var item: ItemData = slot_items[i] as ItemData
@@ -115,29 +121,29 @@ func _build_slots() -> void:
 			continue
 
 		var root: Control = Control.new()
-		root.position = start + Vector2(i * (SLOT_SIZE.x + SLOT_GAP), 0.0)
-		root.size = SLOT_SIZE
+		root.position = start + Vector2(i * (_slot_size.x + SLOT_GAP), 0.0)
+		root.size = _slot_size
 		root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		add_child(root)
 
 		var border: ColorRect = ColorRect.new()
-		border.size = SLOT_SIZE
+		border.size = _slot_size
 		border.color = COLOR_BORDER
 		border.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		root.add_child(border)
 
 		var fill: ColorRect = ColorRect.new()
 		fill.position = Vector2(2, 2)
-		fill.size = SLOT_SIZE - Vector2(4, 4)
+		fill.size = _slot_size - Vector2(4, 4)
 		fill.color = COLOR_FILL
 		fill.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		root.add_child(fill)
 
 		if i < MAX_KEY_SLOTS:
 			_add_label(root, str(i + 1), Vector2(2, 1), Vector2(10, 9), HORIZONTAL_ALIGNMENT_LEFT, COLOR_KEY, 7)
-		_add_label(root, _get_hotbar_name(item), Vector2(0, 9), Vector2(SLOT_SIZE.x, 10), HORIZONTAL_ALIGNMENT_CENTER, COLOR_TEXT, 6)
+		_add_label(root, _get_hotbar_name(item), Vector2(0, 9), Vector2(_slot_size.x, 10), HORIZONTAL_ALIGNMENT_CENTER, COLOR_TEXT, 6)
 		var count_label: Label = _add_label(
-			root, "", Vector2(2, 17), Vector2(SLOT_SIZE.x - 4, 10), HORIZONTAL_ALIGNMENT_RIGHT, COLOR_TEXT, 6
+			root, "", Vector2(2, 17), Vector2(_slot_size.x - 4, 10), HORIZONTAL_ALIGNMENT_RIGHT, COLOR_TEXT, 6
 		)
 
 		_slot_views.append({

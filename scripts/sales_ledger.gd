@@ -23,5 +23,17 @@ func record(day: int, amount: int) -> void:
 		print("[SalesLedger] %d日目の売上=%dG 累計売上=%dG" % [day, get_daily_sales(day), total_sales])
 
 
+## 売上の記録を空にする(新しいシーズン用)
+func reset() -> void:
+	daily_sales.clear()
+	total_sales = 0
+
+
+## 売上の記録を復元する(ロード用)
+func restore_state(daily: Dictionary, total: int) -> void:
+	daily_sales = daily
+	total_sales = total
+
+
 func get_daily_sales(day: int) -> int:
 	return daily_sales.get(day, 0)

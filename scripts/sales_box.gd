@@ -66,9 +66,11 @@ func _on_day_finished(day: int) -> void:
 		var item: ItemData = entry["item"]
 		var count: int = int(entry["count"])
 		var quality: int = int(entry["quality"])
-		var unit_price: int = roundi(float(item.sell_price) * 1.5) if quality == 1 else item.sell_price
+		var unit_price: int = roundi(float(item.sell_price) * Balance.data.quality_sell_multiplier) if quality == 1 else item.sell_price
 		var amount: int = unit_price * count
 		total += amount
+		if quality == 1:
+			DebugFlags.log_effect("品質★売却 %s x%d: 単価 %d→%d(x%.2f) 通常なら%dG / 実際%dG" % [item.display_name, count, item.sell_price, unit_price, Balance.data.quality_sell_multiplier, item.sell_price * count, amount])
 		var quality_mark: String = "★" if quality == 1 else ""
 		lines.append("%s%s x%d = %dG" % [item.display_name, quality_mark, count, amount])
 	_entries.clear()

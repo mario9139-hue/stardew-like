@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="ItemData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/item_data.gd" id="1_item"]
+
+[resource]
+script = ExtResource("1_item")
+id = &"wooden_sword"
+display_name = "木の剣"
+sell_price = 0
+item_type = 5
+weapon_attack_power = 5
+weapon_attack_range = 24.0
+weapon_attack_cooldown = 0.4

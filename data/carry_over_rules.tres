@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="CarryOverRules" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/carry_over_rules.gd" id="1_rules"]
+
+[resource]
+script = ExtResource("1_rules")
+keep_money = true
+keep_weapons = true
+keep_inventory = true
+keep_bonus_items = true

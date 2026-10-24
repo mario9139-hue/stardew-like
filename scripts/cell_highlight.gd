@@ -8,6 +8,7 @@ extends Node2D
 
 const COLOR_GROWTH: Color = Color(0.25, 0.95, 0.35, 1.0)
 const COLOR_QUALITY: Color = Color(1.0, 0.78, 0.18, 1.0)
+const COLOR_COMBINED: Color = Color(0.72, 0.32, 0.95, 1.0)
 
 var _farm_map: FarmMap
 var _default_color: Color
@@ -36,9 +37,13 @@ func _update_highlight() -> void:
 	if _farm_map != null:
 		var data: CellData = _farm_map.get_cell_data(cell)
 		if data != null:
-			if data.quality > 0:
+			var has_growth: bool = data.growth_bonus_days > 0
+			var has_quality: bool = data.quality > 0
+			if has_growth and has_quality:
+				next_color = COLOR_COMBINED
+			elif has_quality:
 				next_color = COLOR_QUALITY
-			elif data.growth_bonus_days > 0:
+			elif has_growth:
 				next_color = COLOR_GROWTH
 	if color != next_color:
 		color = next_color

@@ -4,9 +4,10 @@ extends RefCounted
 ## 前提: TileMapLayer はワールド原点 (0, 0) に置く(スケール・回転なし)。
 ## 使用対象マスは、プレイヤー中心ではなく、向いている方向の前面の辺を基準に決める。
 
-const TILE_SIZE: int = 16
+## タイルサイズ・マップサイズは GameConfig で決める
+const TILE_SIZE: int = GameConfig.TILE_SIZE
 ## マップのサイズ(マス数)
-const MAP_SIZE: Vector2i = Vector2i(20, 11)
+const MAP_SIZE: Vector2i = GameConfig.MAP_SIZE
 
 
 ## セルの左上のワールド座標

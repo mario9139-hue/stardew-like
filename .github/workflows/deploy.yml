@@ -1,0 +1,56 @@
+# main ブランチへの push で、Godot をヘッドレスで Web 書き出しし、GitHub Pages に公開する。
+# 使用イメージ: barichello/godot-ci:4.3(Godot 4.3 + 書き出しテンプレート入り。project.godot の config/features に合わせる)
+# Godot のバージョンを上げるときは、下の image のタグを変える(README も更新)。
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: barichello/godot-ci:4.3
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Import project
+        # 初回はリソースのインポートが必要(失敗しても書き出しで再度試すので、ここでは止めない)
+        run: godot --headless --verbose --import || true
+
+      - name: Export Web (single-thread)
+        run: |
+          mkdir -p build/web
+          godot --headless --verbose --export-release "Web" build/web/index.html
+          ls -la build/web
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: build/web
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

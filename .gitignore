@@ -1,10 +1,25 @@
-# Godot 4 のキャッシュ
+# Godot 4
 .godot/
+*.translation
 
-# エクスポート成果物
-build/
-exports/
+# Export
+export/
+*.apk
+*.aab
+*.exe
+*.pck
+*.zip
 
-# OSの一時ファイル
+# Mono / .NET (使わない場合も無害)
+.mono/
+data_*/
+mono_crash.*.json
+
+# OS / Editor
 .DS_Store
 Thumbs.db
+.vscode/
+.idea/
+
+# Web 書き出しの成果物
+build/

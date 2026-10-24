@@ -1,7 +1,6 @@
-[gd_scene load_steps=38 format=3]
+[gd_scene load_steps=43 format=3]
 
 [ext_resource type="PackedScene" path="res://scenes/player.tscn" id="1_player"]
-[ext_resource type="Texture2D" path="res://assets/tiles_placeholder.png" id="2_tiles"]
 [ext_resource type="Script" path="res://scripts/farm_map.gd" id="3_farmmap"]
 [ext_resource type="Script" path="res://scripts/cell_highlight.gd" id="4_highlight"]
 [ext_resource type="Script" path="res://scripts/tool_controller.gd" id="5_toolctrl"]
@@ -17,7 +16,7 @@
 [ext_resource type="PackedScene" path="res://scenes/house.tscn" id="16_house"]
 [ext_resource type="PackedScene" path="res://scenes/sales_box.tscn" id="17_salesbox"]
 [ext_resource type="Script" path="res://scripts/screen_fader.gd" id="18_fader"]
-[ext_resource type="Script" path="res://scripts/season_end_overlay.gd" id="19_seasonend"]
+[ext_resource type="PackedScene" path="res://scenes/result_screen.tscn" id="45_result"]
 [ext_resource type="Script" path="res://scripts/interaction_controller.gd" id="20_interaction"]
 [ext_resource type="Script" path="res://scripts/money_display.gd" id="21_money"]
 [ext_resource type="Script" path="res://scripts/settlement_display.gd" id="22_settlement"]
@@ -35,23 +34,19 @@
 [ext_resource type="Resource" path="res://data/shop/strawberry_seed_entry.tres" id="34_strawberry_entry"]
 [ext_resource type="Resource" path="res://data/items/growth_powder.tres" id="35_growth_powder"]
 [ext_resource type="Resource" path="res://data/items/quality_shard.tres" id="36_quality_shard"]
-
-[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_farm"]
-texture = ExtResource("2_tiles")
-texture_region_size = Vector2i(16, 16)
-0:0/0 = 0
-1:0/0 = 0
-2:0/0 = 0
-3:0/0 = 0
-
-[sub_resource type="TileSet" id="TileSet_farm"]
-tile_size = Vector2i(16, 16)
-sources/0 = SubResource("TileSetAtlasSource_farm")
+[ext_resource type="Resource" path="res://data/items/wooden_sword.tres" id="37_wooden_sword"]
+[ext_resource type="Resource" path="res://data/shop/wooden_sword_entry.tres" id="38_wooden_sword_entry"]
+[ext_resource type="Script" path="res://scripts/attack_controller.gd" id="39_attack"]
+[ext_resource type="PackedScene" path="res://scenes/monster.tscn" id="40_monster"]
+[ext_resource type="Script" path="res://scripts/monster_spawner.gd" id="41_spawner"]
+[ext_resource type="Resource" path="res://data/monsters/slime.tres" id="42_slime"]
+[ext_resource type="Script" path="res://scripts/night_overlay.gd" id="43_night"]
+[ext_resource type="Script" path="res://scripts/main.gd" id="44_main"]
 
 [node name="Main" type="Node2D"]
+script = ExtResource("44_main")
 
 [node name="FarmMap" type="TileMapLayer" parent="."]
-tile_set = SubResource("TileSet_farm")
 script = ExtResource("3_farmmap")
 
 [node name="CropRenderer" type="Node2D" parent="."]
@@ -72,7 +67,12 @@ position = Vector2(136, 104)
 
 [node name="Shop" parent="." instance=ExtResource("26_shop")]
 position = Vector2(36, 156)
-entries = [ExtResource("28_entry"), ExtResource("33_potato_entry"), ExtResource("34_strawberry_entry")]
+entries = [ExtResource("28_entry"), ExtResource("33_potato_entry"), ExtResource("34_strawberry_entry"), ExtResource("38_wooden_sword_entry")]
+
+[node name="MonsterSpawner" type="Node2D" parent="."]
+script = ExtResource("41_spawner")
+monster_scene = ExtResource("40_monster")
+monster_pool = [ExtResource("42_slime")]
 
 [node name="Player" parent="." instance=ExtResource("1_player")]
 position = Vector2(168, 88)
@@ -85,6 +85,9 @@ starting_items = {
 
 [node name="ToolController" type="Node" parent="."]
 script = ExtResource("5_toolctrl")
+
+[node name="AttackController" type="Node" parent="."]
+script = ExtResource("39_attack")
 
 [node name="InteractionController" type="Node" parent="."]
 script = ExtResource("20_interaction")
@@ -134,6 +137,30 @@ theme_override_constants/outline_size = 3
 theme_override_font_sizes/font_size = 8
 text = "体力 100/100"
 
+[node name="HpBack" type="ColorRect" parent="Hud"]
+offset_left = 4.0
+offset_top = 44.0
+offset_right = 64.0
+offset_bottom = 50.0
+color = Color(0.1, 0.1, 0.1, 0.8)
+
+[node name="HpFill" type="ColorRect" parent="Hud"]
+offset_left = 4.0
+offset_top = 44.0
+offset_right = 64.0
+offset_bottom = 50.0
+color = Color(0.9, 0.4, 0.65, 1)
+
+[node name="HpLabel" type="Label" parent="Hud"]
+offset_left = 68.0
+offset_top = 40.0
+offset_right = 140.0
+offset_bottom = 52.0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 8
+text = "HP 50/50"
+
 [node name="MoneyDisplay" type="CanvasLayer" parent="."]
 script = ExtResource("21_money")
 
@@ -150,6 +177,21 @@ theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 3
 theme_override_font_sizes/font_size = 10
 text = "0500G"
+horizontal_alignment = 2
+
+[node name="WeaponLabel" type="Label" parent="MoneyDisplay"]
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -136.0
+offset_top = 14.0
+offset_right = -4.0
+offset_bottom = 26.0
+grow_horizontal = 0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 10
+text = "装備: 素手"
 horizontal_alignment = 2
 
 [node name="SettlementDisplay" type="CanvasLayer" parent="."]
@@ -170,31 +212,10 @@ theme_override_constants/outline_size = 3
 theme_override_font_sizes/font_size = 10
 horizontal_alignment = 2
 
-[node name="SeasonEndOverlay" type="CanvasLayer" parent="."]
-layer = 5
-script = ExtResource("19_seasonend")
+[node name="ResultScreen" parent="." instance=ExtResource("45_result")]
 
-[node name="Dim" type="ColorRect" parent="SeasonEndOverlay"]
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-color = Color(0, 0, 0, 0.6)
-
-[node name="Label" type="Label" parent="SeasonEndOverlay"]
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_constants/outline_size = 4
-theme_override_font_sizes/font_size = 20
-text = "シーズン終了"
-horizontal_alignment = 1
-vertical_alignment = 1
+[node name="NightOverlay" type="CanvasModulate" parent="."]
+script = ExtResource("43_night")
 
 [node name="ScreenFader" type="CanvasLayer" parent="."]
 layer = 10

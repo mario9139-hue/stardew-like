@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="MonsterData" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/monster_data.gd" id="1_monster"]
+[ext_resource type="Resource" path="res://data/drops/slime_growth_powder.tres" id="2_drop_powder"]
+[ext_resource type="Resource" path="res://data/drops/slime_quality_shard.tres" id="3_drop_shard"]
+
+[resource]
+script = ExtResource("1_monster")
+id = &"slime"
+display_name = "スライム"
+max_hp = 10
+move_speed = 28.0
+contact_damage = 5
+body_color = Color(0.3, 0.75, 0.3, 1)
+drops = [ExtResource("2_drop_powder"), ExtResource("3_drop_shard")]

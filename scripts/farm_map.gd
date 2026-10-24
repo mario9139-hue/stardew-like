@@ -8,12 +8,15 @@ extends TileMapLayer
 signal cell_changed(cell: Vector2i)
 ## 日が進んで、全マスの更新が終わったときに発行される
 signal day_advanced
+## 作物がモンスターに荒らされたときに発行される
+signal crop_ruined(cell: Vector2i)
 
-const SOURCE_ID: int = 0
-const ATLAS_GRASS: Vector2i = Vector2i(0, 0)
-const ATLAS_FARMLAND: Vector2i = Vector2i(1, 0)
-const ATLAS_TILLED: Vector2i = Vector2i(2, 0)
-const ATLAS_TILLED_WET: Vector2i = Vector2i(3, 0)
+## タイルの種類 = TileSet のソース番号。素材は SpriteProvider の "tiles/<名前>" から取得する
+const TILE_GRASS: int = 0
+const TILE_FARMLAND: int = 1
+const TILE_TILLED: int = 2
+const TILE_TILLED_WET: int = 3
+const TILE_NAMES: PackedStringArray = ["grass", "farmland", "tilled", "tilled_wet"]
 
 ## 農地予定地の見た目の範囲(セル単位)。状態は草地と同じで、耕せる
 @export var farmland_rect: Rect2i = Rect2i(11, 3, 6, 5)
@@ -24,12 +27,61 @@ var cells: Dictionary = {}
 
 
 func _ready() -> void:
+	add_to_group(&"farm_map")
+	_build_tile_set()
 	_build_map()
 
 
 ## マスの状態を返す。マップ外なら null
 func get_cell_data(cell: Vector2i) -> CellData:
 	return cells.get(cell)
+
+
+## セーブ用: 草地のままで作物もないマスは省いた、マス状態の一覧
+func export_state() -> Array:
+	var result: Array = []
+	for cell_key in cells.keys():
+		var cell: Vector2i = cell_key
+		var data: CellData = cells[cell]
+		if data.soil == CellData.Soil.GRASS and not data.has_crop():
+			continue
+		result.append({
+			"x": cell.x, "y": cell.y, "soil": int(data.soil),
+			"crop": String(data.crop.id) if data.has_crop() else "",
+			"growth_progress": data.growth_progress, "growth_bonus_days": data.growth_bonus_days,
+			"quality": data.quality, "is_watered": data.is_watered,
+		})
+	return result
+
+
+## ロード用: export_state の一覧を反映する。未知の作物 id はその作物だけスキップ(警告)
+func import_state(entries: Array) -> void:
+	for entry in entries:
+		if typeof(entry) != TYPE_DICTIONARY:
+			continue
+		var cell: Vector2i = Vector2i(int(entry.get("x", -1)), int(entry.get("y", -1)))
+		var data: CellData = get_cell_data(cell)
+		if data == null:
+			push_warning("FarmMap: マップ外のマスをスキップしました: %s" % cell)
+			continue
+		data.soil = CellData.Soil.TILLED if int(entry.get("soil", 0)) == int(CellData.Soil.TILLED) else CellData.Soil.GRASS
+		data.is_watered = bool(entry.get("is_watered", false))
+		data.crop = null
+		data.growth_progress = 0
+		data.growth_bonus_days = 0
+		data.quality = 0
+		var crop_id: String = String(entry.get("crop", ""))
+		if crop_id != "":
+			var crop: CropData = ItemRegistry.get_crop(StringName(crop_id))
+			if crop == null:
+				push_warning("FarmMap: 未知の作物 id をスキップしました: %s %s" % [crop_id, cell])
+			else:
+				data.crop = crop
+				data.growth_progress = int(entry.get("growth_progress", 0))
+				data.growth_bonus_days = int(entry.get("growth_bonus_days", 0))
+				data.quality = int(entry.get("quality", 0))
+		_refresh_cell(cell)
+		cell_changed.emit(cell)
 
 
 ## 耕せるか(マップ内の草地状態のマスか)
@@ -83,6 +135,25 @@ func plant(cell: Vector2i, crop: CropData) -> bool:
 	return true
 
 
+## モンスターに作物を荒らされる。マスは耕地(水やり前)に戻り、成長日数・成長ボーナス・品質は全て消える。
+## 種は戻らない。荒らせたら true(作物がなければ false)
+func ruin_crop(cell: Vector2i) -> bool:
+	var data: CellData = get_cell_data(cell)
+	if data == null or not data.has_crop():
+		return false
+	data.crop = null
+	data.growth_progress = 0
+	data.growth_bonus_days = 0
+	data.quality = 0
+	data.is_watered = false
+	SeasonStats.add_ruined_crop()
+	_refresh_cell(cell)
+	cell_changed.emit(cell)
+	crop_ruined.emit(cell)
+	DebugFlags.log_effect("作物が荒らされた cell=%s / 今シーズンの荒らされた作物数: %d" % [cell, SeasonStats.ruined_crops])
+	return true
+
+
 ## 収穫できるか(成長完了した作物があるマスか)
 func can_harvest(cell: Vector2i) -> bool:
 	var data: CellData = get_cell_data(cell)
@@ -109,25 +180,25 @@ func harvest(cell: Vector2i) -> CropData:
 	return crop
 
 
-## 指定マスの次の日替わり1回だけ、成長を前倒しする。作物がないマスには付与しない。
+## 指定マスの次の日替わり1回だけ、成長を前倒しする。作物がないマスや成長効果付与済みのマスには付与しない。
+## 品質効果とは併用できるが、成長効果そのものの重複付与はできない。
 func apply_growth_boost(cell: Vector2i, days: int) -> bool:
 	var data: CellData = get_cell_data(cell)
 	if data == null or not data.has_crop() or days <= 0:
 		return false
-	# 1マスに付与できる強化効果は1つだけ。重ね掛けはできない。
-	if data.growth_bonus_days > 0 or data.quality > 0:
+	if data.growth_bonus_days > 0:
 		return false
 	data.growth_bonus_days = days
 	cell_changed.emit(cell)
 	return true
 
 
-## 指定マスの作物に高品質(quality=1)を付与する。空マスや効果付与済みのマスには付与しない。
+## 指定マスの作物に高品質(quality=1)を付与する。成長効果とは併用できるが、品質効果の重複付与はできない。
 func apply_quality(cell: Vector2i) -> bool:
 	var data: CellData = get_cell_data(cell)
 	if data == null or not data.has_crop():
 		return false
-	if data.growth_bonus_days > 0 or data.quality > 0:
+	if data.quality > 0:
 		return false
 	data.quality = 1
 	cell_changed.emit(cell)
@@ -143,8 +214,13 @@ func advance_day() -> void:
 		var cell: Vector2i = cell_key
 		var data: CellData = cells[cell]
 		if data.has_crop():
+			var progress_before: int = data.growth_progress
 			if data.is_watered and not data.is_harvestable():
 				data.growth_progress += 1 + data.growth_bonus_days
+			if data.growth_bonus_days > 0:
+				DebugFlags.log_effect("成長効果 cell=%s %s: 成長 %d→%d / %d日(ボーナス+%d日%s)" % [
+					cell, data.crop.id, progress_before, data.growth_progress, data.crop.growth_days,
+					data.growth_bonus_days, "" if data.growth_progress > progress_before else "・未水やりのため不発"])
 			data.growth_bonus_days = 0
 		else:
 			# 作物のないマスには一時効果を持ち越さない
@@ -154,6 +230,20 @@ func advance_day() -> void:
 			data.is_watered = false
 			_refresh_cell(cell)
 	day_advanced.emit()
+
+
+## TileSet を GameConfig のタイルサイズと SpriteProvider の素材から作る(1種類 = 1ソース、タイルは1枚)
+func _build_tile_set() -> void:
+	var new_tile_set: TileSet = TileSet.new()
+	var tile_size: Vector2i = Vector2i(GameConfig.TILE_SIZE, GameConfig.TILE_SIZE)
+	new_tile_set.tile_size = tile_size
+	for i: int in TILE_NAMES.size():
+		var source: TileSetAtlasSource = TileSetAtlasSource.new()
+		source.texture = SpriteProvider.get_texture(StringName("tiles/%s" % TILE_NAMES[i]))
+		source.texture_region_size = tile_size
+		source.create_tile(Vector2i.ZERO)
+		new_tile_set.add_source(source, i)
+	tile_set = new_tile_set
 
 
 func _build_map() -> void:
@@ -169,11 +259,11 @@ func _build_map() -> void:
 ## 状態に合わせてタイルの見た目を更新する(作物の見た目は CropRenderer が描く)
 func _refresh_cell(cell: Vector2i) -> void:
 	var data: CellData = cells[cell]
-	var atlas: Vector2i
+	var tile_kind: int
 	if data.soil == CellData.Soil.TILLED:
-		atlas = ATLAS_TILLED_WET if data.is_watered else ATLAS_TILLED
+		tile_kind = TILE_TILLED_WET if data.is_watered else TILE_TILLED
 	elif farmland_rect.has_point(cell):
-		atlas = ATLAS_FARMLAND
+		tile_kind = TILE_FARMLAND
 	else:
-		atlas = ATLAS_GRASS
-	set_cell(cell, SOURCE_ID, atlas)
+		tile_kind = TILE_GRASS
+	set_cell(cell, tile_kind, Vector2i.ZERO)

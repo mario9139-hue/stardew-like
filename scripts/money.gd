@@ -9,6 +9,17 @@ const STARTING_AMOUNT: int = 500
 var amount: int = STARTING_AMOUNT
 
 
+## 初期の所持金に戻す(新規開始・次のシーズン用)
+func reset() -> void:
+	set_amount(STARTING_AMOUNT)
+
+
+## 所持金を直接決める(引き継ぎ用)
+func set_amount(value: int) -> void:
+	amount = maxi(value, 0)
+	changed.emit(amount)
+
+
 ## 所持金を増やす(0以下は無視)
 func add(value: int) -> void:
 	if value <= 0:

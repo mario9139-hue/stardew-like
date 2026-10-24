@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="BalanceData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/balance_data.gd" id="1_balance"]
+
+[resource]
+script = ExtResource("1_balance")
+spawn_interval_seconds = 8.0
+max_monsters = 5
+min_player_distance = 200.0
+drop_chances = {
+"growth_powder": 0.5,
+"quality_shard": 0.4
+}
+growth_powder_effect_days = 1
+rank_b_sales = 3000
+rank_a_sales = 6000
+rank_s_sales = 10000
+monster_detection_range = 150.0
+ruin_seconds = 2.0
+night_color = Color(0.3, 0.35, 0.6, 1)
+night_strength = 1.0
+night_darkest_hour = 24.0
+night_fade_seconds = 1.0
+quality_sell_multiplier = 1.5

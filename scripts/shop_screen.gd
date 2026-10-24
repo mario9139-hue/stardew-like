@@ -6,7 +6,7 @@ extends CanvasLayer
 ## 見た目は仮デザイン(色付き四角 + Label)で、コードで生成する。
 
 const PANEL_RECT: Rect2 = Rect2(40.0, 20.0, 240.0, 140.0)
-const ROW_START_Y: float = 58.0
+const ROW_START_Y: float = 52.0
 const ROW_HEIGHT: float = 16.0
 const BUY_BUTTON_RECT: Rect2 = Rect2(176.0, 134.0, 44.0, 20.0)
 const CLOSE_BUTTON_RECT: Rect2 = Rect2(226.0, 134.0, 48.0, 20.0)
@@ -19,8 +19,10 @@ const COLOR_TEXT: Color = Color(1.0, 1.0, 1.0, 1.0)
 const COLOR_DIM: Color = Color(0.7, 0.7, 0.75, 1.0)
 
 @export var inventory_path: NodePath = ^"../Inventory"
+@export var player_path: NodePath = ^"../Player"
 
 var _inventory: Inventory
+var _player: Player
 ## 売る商品(ShopEntry)。item が設定されているものだけ
 var _entries: Array = []
 var _selected: int = 0
@@ -45,6 +47,11 @@ func _ready() -> void:
 		push_error("ShopScreen: Inventory を取得できません")
 	else:
 		_inventory.item_changed.connect(_on_item_changed)
+	_player = get_node_or_null(player_path) as Player
+	if _player == null:
+		push_error("ShopScreen: Player を取得できません")
+	else:
+		_player.weapon_changed.connect(_on_weapon_changed)
 	Money.changed.connect(_on_money_changed)
 	_build_static_ui()
 
@@ -133,12 +140,33 @@ func _buy_selected() -> void:
 	if _entries.is_empty() or _inventory == null:
 		return
 	var entry: ShopEntry = _entries[_selected]
+	var is_weapon: bool = entry.item.item_type == ItemData.Type.WEAPON
+	if is_weapon:
+		if _player == null:
+			_show_message("装備先がありません")
+			return
+		if _player.owns_weapon(entry.item.id):
+			_show_message("購入済みです")
+			return
+		if _player.has_any_owned_weapon():
+			_show_message("武器は1個までです")
+			return
 	if not Money.can_afford(entry.price):
 		_show_message("お金が足りない")
 		return
-	Money.spend(entry.price)
-	_inventory.add_item(entry.item.id, 1)
-	_show_message("%s を買った" % entry.item.display_name)
+	if not Money.spend(entry.price):
+		_show_message("購入できませんでした")
+		return
+	if is_weapon:
+		if not _player.purchase_and_equip_weapon(entry.item):
+			# 予期しない装備状態の変化があった場合は代金を返す。
+			Money.add(entry.price)
+			_show_message("武器を装備できませんでした")
+			return
+		_show_message("%s を購入・装備した" % entry.item.display_name)
+	else:
+		_inventory.add_item(entry.item.id, 1)
+		_show_message("%s を買った" % entry.item.display_name)
 
 
 func _on_item_changed(_item_id: StringName, _new_count: int) -> void:
@@ -147,6 +175,11 @@ func _on_item_changed(_item_id: StringName, _new_count: int) -> void:
 
 
 func _on_money_changed(_amount: int) -> void:
+	if visible:
+		_refresh()
+
+
+func _on_weapon_changed(_weapon: ItemData) -> void:
 	if visible:
 		_refresh()
 
@@ -167,7 +200,15 @@ func _refresh() -> void:
 	for i: int in _row_views.size():
 		var entry: ShopEntry = _entries[i]
 		var owned: Label = _row_views[i]["owned"]
-		owned.text = "x%d" % (_inventory.get_count(entry.item.id) if _inventory != null else 0)
+		if entry.item.item_type == ItemData.Type.WEAPON:
+			if _player != null and _player.owns_weapon(entry.item.id):
+				owned.text = "購入済み"
+			elif _player != null and _player.has_any_owned_weapon():
+				owned.text = "購入不可"
+			else:
+				owned.text = ""
+		else:
+			owned.text = "x%d" % (_inventory.get_count(entry.item.id) if _inventory != null else 0)
 	_highlight.visible = not _entries.is_empty()
 	_highlight.position = Vector2(PANEL_RECT.position.x + 8.0, ROW_START_Y + _selected * ROW_HEIGHT)
 

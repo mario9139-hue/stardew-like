@@ -1,6 +1,6 @@
 class_name CropRenderer
 extends Node2D
-## 作物を仮の色付き四角で描く。色は CropData の段階色、成長完了で少し大きく描く。
+## 作物を描く。素材(または仮の色付き四角)は CropData から SpriteProvider 経由で取得する。
 ## 描画対象は FarmMap.cells の状態。FarmMap の変更シグナルで再描画する。
 
 @export var farm_map_path: NodePath = ^"../FarmMap"
@@ -29,11 +29,12 @@ func _draw() -> void:
 		var data: CellData = _farm_map.cells[cell]
 		if not data.has_crop():
 			continue
-		var margin: float = 3.0 if data.is_harvestable() else 4.0
-		var side: float = float(GridUtils.TILE_SIZE) - margin * 2.0
-		var origin: Vector2 = GridUtils.cell_to_world(cell) + Vector2(margin, margin)
-		var color: Color = data.crop.get_stage_color(data.growth_progress)
-		draw_rect(Rect2(origin, Vector2(side, side)), color)
+		# 素材はマスの下端中央に合わせて置く(背の高い素材でも根元がマスの下に揃う)
+		var texture: Texture2D = data.crop.get_stage_texture(data.growth_progress)
+		var tile_px: float = float(GridUtils.TILE_SIZE)
+		var texture_size: Vector2 = texture.get_size()
+		var origin: Vector2 = GridUtils.cell_to_world(cell) + Vector2((tile_px - texture_size.x) * 0.5, tile_px - texture_size.y)
+		draw_texture(texture, origin)
 		# 効果が付いたマスは、対象を移動しても分かるようにタイル外周を色分けする。
 		var effect_color: Color = Color.TRANSPARENT
 		if data.quality > 0:

@@ -13,6 +13,7 @@ var _items: Dictionary = {}
 
 
 func _ready() -> void:
+	add_to_group(&"inventory")
 	for key in starting_items.keys():
 		add_item(StringName(key), int(starting_items[key]))
 
@@ -39,6 +40,29 @@ func remove_item(item_id: StringName, amount: int = 1, quality: int = 0) -> bool
 		_items[item_key] = new_count
 	item_changed.emit(item_id, new_count)
 	return true
+
+
+## 所持品の全部(キー → 個数)のコピー。引き継ぎ用。キーは通常「ID」、高品質は「ID#q1」
+func get_all_items() -> Dictionary:
+	return _items.duplicate()
+
+
+## 所持品を丸ごと入れ替える(引き継ぎ用)。入れ替え前後で変わったアイテムの item_changed を発行する
+func replace_items(items: Dictionary) -> void:
+	var old_items: Dictionary = _items
+	_items = {}
+	for key in items.keys():
+		if int(items[key]) > 0:
+			_items[StringName(key)] = int(items[key])
+	var changed_keys: Dictionary = {}
+	for key in old_items.keys():
+		changed_keys[key] = true
+	for key in _items.keys():
+		changed_keys[key] = true
+	for key in changed_keys.keys():
+		var key_text: String = String(key)
+		var base_id: StringName = StringName(key_text.get_slice("#q", 0))
+		item_changed.emit(base_id, get_count(base_id, 0))
 
 
 func get_count(item_id: StringName, quality: int = 0) -> int:

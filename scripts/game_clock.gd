@@ -47,7 +47,7 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	if not _running or real_seconds_per_game_hour <= 0.0:
 		return
-	var speed: float = debug_speed_multiplier if is_fast else 1.0
+	var speed: float = debug_speed_multiplier if is_fast and DebugFlags.DEBUG_ENABLED else 1.0
 	_minutes += delta * 60.0 / real_seconds_per_game_hour * speed
 
 	if not _night_emitted and _minutes >= float(NIGHT_START_HOUR * 60):
@@ -64,7 +64,7 @@ func _process(delta: float) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if event.is_action_pressed(&"debug_toggle_speed"):
+	if DebugFlags.DEBUG_ENABLED and event.is_action_pressed(&"debug_toggle_speed"):
 		toggle_debug_speed()
 
 
@@ -82,6 +82,34 @@ func start_new_day() -> void:
 		is_season_over = true
 		_running = false
 		season_ended.emit()
+
+
+## 経過ゲーム内分(6:00 = 360.0)。セーブ用
+func get_minutes() -> float:
+	return _minutes
+
+
+## 日と時刻を復元する(ロード用)。夜(21:00以降)なら night_started が次のフレームで再び発行される
+func restore_state(day_value: int, minutes: float) -> void:
+	day = clampi(day_value, 1, SEASON_DAYS)
+	_minutes = clampf(minutes, float(DAY_START_HOUR * 60), float(DAY_END_HOUR * 60 - 1))
+	is_fast = false
+	is_season_over = false
+	_night_emitted = false
+	_running = true
+	_last_minute = -1
+	_emit_time_if_changed()
+
+
+## 1日目の 6:00 に戻す(新規開始・次のシーズン用。シグナルは発行しない。シーンを読み込み直す前提)
+func reset_for_new_season() -> void:
+	day = 1
+	is_fast = false
+	is_season_over = false
+	_minutes = float(DAY_START_HOUR * 60)
+	_last_minute = DAY_START_HOUR * 60
+	_running = true
+	_night_emitted = false
 
 
 ## デバッグ用: 倍速 / 通常 を切り替える
