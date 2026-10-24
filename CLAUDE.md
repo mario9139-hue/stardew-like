@@ -29,5 +29,5 @@ Godot 4(GDScript)製の2D農場ゲーム(スタデューバレー風)。1人・�
 7. デバッグキー(F1〜F7)は必ず `DebugFlags.DEBUG_ENABLED` を確認してから動かす。F8 で実行中に ON/OFF、既定値は `scripts/debug_flags.gd` の `DEFAULT_ENABLED`
 8. スマホ用ボタンを追加・変更するときは、既存UI(ホットバー・HUD・金額表示など)との重なりを確認し、調整はスマホ用ボタン側(touch_controls.gd)だけで行う。PCと共通のUIは変えない。デバッグボタンは画面上側に横並び・小さめ
 9. 見た目(スプライト)は `SpriteProvider.get_texture("カテゴリ/名前")` 経由で取得する。素材が無ければ仮の色付き四角が自動で使われる。タイルサイズ・解像度は `GameConfig` だけで決め、コードに 16 / 320 / 180 を直書きしない。命名規則は `docs/art_spec.md`
-9. アイテムの使用は「クリック(use_tool)」で統一する。特に指示がない限り変えない。新しいアイテムを追加したときもクリックで使えるようにする(Eキーは家・売却箱・井戸・店などの施設の操作だけ)
-10. セーブデータは `user://save.json`(version付きJSON)。ItemData/CropData/MonsterData は id で保存し、ロード時は `ItemRegistry` で復元する。保存する状態を増やしたら `SaveManager` に足す
+10. アイテムの使用は「クリック(use_tool)」で統一する。特に指示がない限り変えない。新しいアイテムを追加したときもクリックで使えるようにする(Eキーは家・売却箱・井戸・店などの施設の操作だけ)
+11. セーブデータは `user://save.json`(version付きJSON)。ItemData/CropData/MonsterData は id で保存し、ロード時は `ItemRegistry` で復元する。保存する状態を増やしたら `SaveManager` に足す

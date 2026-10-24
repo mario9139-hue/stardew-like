@@ -28,11 +28,11 @@ jobs:
 
       - name: Setup export templates
         # GitHub Actions のコンテナでは HOME が /root と違うことがあり、イメージ内の書き出しテンプレートを見失う。
-        # テンプレートを HOME 側へ置き直す(HOME が /root のときは何もしない)
+        # テンプレートを HOME 側へ置き直す(HOME が /root のときは何もしない)。バージョンは image のタグ(4.3)に合わせて直書き
         run: |
           if [ "$HOME" != "/root" ]; then
             mkdir -v -p ~/.local/share/godot/export_templates/
-            mv /root/.local/share/godot/export_templates/${GODOT_VERSION}.stable ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable
+            mv /root/.local/share/godot/export_templates/4.3.stable ~/.local/share/godot/export_templates/4.3.stable
           fi
           ls ~/.local/share/godot/export_templates/
 
